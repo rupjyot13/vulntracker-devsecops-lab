@@ -235,7 +235,11 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v6
 
-
+      - name: Clean reports directory
+        run: |
+          rm -rf reports
+          mkdir -p reports
+          
       # --------------------------------------------------------
       # Install Python
       # --------------------------------------------------------
