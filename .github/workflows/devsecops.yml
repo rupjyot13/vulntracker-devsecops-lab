@@ -16,11 +16,15 @@ permissions:
 
 jobs:
 
+  # ============================================================
+  # 1. SAST - Static Application Security Testing
+  # ============================================================
   sast:
     name: SAST - Bandit and Semgrep
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout source
         uses: actions/checkout@v6
 
@@ -61,11 +65,16 @@ jobs:
           name: sast-reports
           path: reports/
 
+
+  # ============================================================
+  # 2. SCA - Software Composition Analysis
+  # ============================================================
   sca:
-    name: SCA - Dependency Scan
+    name: SCA - Trivy Dependency Scan
     runs-on: ubuntu-latest
 
     steps:
+
       - name: Checkout source
         uses: actions/checkout@v6
 
@@ -84,3 +93,30 @@ jobs:
         with:
           name: sca-report
           path: trivy-fs.json
+
+
+  # ============================================================
+  # 3. IaC - Infrastructure as Code Security
+  # ============================================================
+  iac:
+    name: IaC - Checkov
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout source
+        uses: actions/checkout@v6
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12.1347.0
+        with:
+          directory: terraform
+          output_format: json
+          output_file_path: reports/checkov.json
+          soft_fail: true
+
+      - name: Upload IaC report
+        uses: actions/upload-artifact@v4
+        with:
+          name: iac-report
+          path: reports/checkov.json
