@@ -288,6 +288,15 @@ jobs:
           echo "Security reports downloaded:"
           find reports -type f -name "*.json" -print
 
+      - name: Inspect downloaded report
+        run: |
+          echo "===== Report files ====="
+          find reports -type f -print
+
+          echo ""
+          echo "===== File types ====="
+          find reports -type f -name "*.json" -exec file {} \;    
+
 
       # --------------------------------------------------------
       # Run Python Security Gate
