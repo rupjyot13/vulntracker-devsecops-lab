@@ -154,3 +154,93 @@ jobs:
         with:
           name: container-report
           path: trivy-image.json
+
+    # ============================================================
+  # 5. Security Gate - Python
+  # ============================================================
+  security-gate:
+    name: Security Gate - Python
+    runs-on: ubuntu-latest
+
+    # Security Gate waits for all scanners to finish.
+    needs:
+      - sast
+      - sca
+      - iac
+      - container
+
+    steps:
+
+      # --------------------------------------------------------
+      # Checkout repository
+      # Needed because security_gate.py is in the repository.
+      # --------------------------------------------------------
+      - name: Checkout source
+        uses: actions/checkout@v6
+
+
+      # --------------------------------------------------------
+      # Install Python
+      # --------------------------------------------------------
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+
+      # --------------------------------------------------------
+      # Download SAST reports
+      # --------------------------------------------------------
+      - name: Download SAST reports
+        uses: actions/download-artifact@v4
+        with:
+          name: sast-reports
+          path: reports/sast
+
+
+      # --------------------------------------------------------
+      # Download SCA report
+      # --------------------------------------------------------
+      - name: Download SCA report
+        uses: actions/download-artifact@v4
+        with:
+          name: sca-report
+          path: reports/sca
+
+
+      # --------------------------------------------------------
+      # Download IaC report
+      # --------------------------------------------------------
+      - name: Download IaC report
+        uses: actions/download-artifact@v4
+        with:
+          name: iac-report
+          path: reports/iac
+
+
+      # --------------------------------------------------------
+      # Download Container report
+      # --------------------------------------------------------
+      - name: Download Container report
+        uses: actions/download-artifact@v4
+        with:
+          name: container-report
+          path: reports/container
+
+
+      # --------------------------------------------------------
+      # Show downloaded reports
+      # Useful for troubleshooting.
+      # --------------------------------------------------------
+      - name: List security reports
+        run: |
+          echo "Security reports downloaded:"
+          find reports -type f -name "*.json" -print
+
+
+      # --------------------------------------------------------
+      # Run Python Security Gate
+      # --------------------------------------------------------
+      - name: Run Security Gate
+        run: |
+          python scripts/security_gate.py        
