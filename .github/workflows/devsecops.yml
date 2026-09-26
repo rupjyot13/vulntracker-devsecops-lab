@@ -297,6 +297,19 @@ jobs:
           echo "===== File types ====="
           find reports -type f -name "*.json" -exec file {} \;    
 
+      - name: Inspect Checkov report bytes
+        run: |
+          echo "===== Checkov report ====="
+          file reports/iac.checkov.json
+
+          echo ""
+          echo "===== First 32 bytes ====="
+          xxd -l 32 reports/iac.checkov.json
+
+          echo ""
+          echo "===== First 500 characters ====="
+          head -c 500 reports/iac.checkov.json || true    
+
 
       # --------------------------------------------------------
       # Run Python Security Gate
