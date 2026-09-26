@@ -126,6 +126,14 @@ jobs:
             -o json \
             --output-file-path reports/checkov.json || true
 
+          echo ""
+          echo "===== Reports directory ====="
+          find reports -maxdepth 3 -type f -print
+
+          echo ""
+          echo "===== Reports directory details ====="
+          ls -lah reports
+
       - name: Verify Checkov report
         run: |
           echo "Checking Checkov report..."
@@ -135,6 +143,9 @@ jobs:
             ls -lh reports/checkov.json
           else
             echo "ERROR: Checkov report was not created."
+            echo ""
+            echo "Files actually created:"
+            find reports -maxdepth 3 -type f -print
             exit 1
           fi
 
