@@ -20,19 +20,29 @@ jobs:
   # 1. SAST - Static Application Security Testing
   # ============================================================
   sast:
-    name: SAST - Bandit and Semgrep
+    name: SAST - Bandit + Semgrep
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Checkout source
         uses: actions/checkout@v6
+
+      # Important:
+      # Start with a clean reports directory so old/generated
+      # reports cannot accidentally become part of the artifact.
+      - name: Clean reports directory
+        run: |
+          rm -rf reports
+          mkdir -p reports
 
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
+      # -------------------------
+      # Bandit - Python SAST
+      # -------------------------
       - name: Install Bandit
         run: |
           python -m pip install --upgrade pip
@@ -40,13 +50,15 @@ jobs:
 
       - name: Run Bandit
         run: |
-          mkdir -p reports
-
-          bandit -r app \
+          bandit \
+            -r app \
             -f json \
             -o reports/bandit.json \
             --exit-zero
 
+      # -------------------------
+      # Semgrep - SAST
+      # -------------------------
       - name: Install Semgrep
         run: |
           pip install semgrep
@@ -59,11 +71,29 @@ jobs:
             --output reports/semgrep.json \
             app || true
 
+      # -------------------------
+      # Verify only expected
+      # SAST reports exist
+      # -------------------------
+      - name: List SAST reports
+        run: |
+          echo "===== SAST reports ====="
+          find reports -type f -print
+
+          echo ""
+          echo "===== File types ====="
+          find reports -type f -exec file {} \;
+
+      # -------------------------
+      # Upload ONLY SAST reports
+      # -------------------------
       - name: Upload SAST reports
         uses: actions/upload-artifact@v4
         with:
           name: sast-reports
-          path: reports/
+          path: |
+            reports/bandit.json
+            reports/semgrep.json
 
 
   # ============================================================
