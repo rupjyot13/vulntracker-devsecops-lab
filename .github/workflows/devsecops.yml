@@ -103,54 +103,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
-      # --------------------------------------------------------
-      # Checkout source
-      # --------------------------------------------------------
       - name: Checkout source
         uses: actions/checkout@v6
 
-
-      # --------------------------------------------------------
-      # Create reports directory
-      # --------------------------------------------------------
       - name: Create reports directory
         run: |
           mkdir -p reports
 
-
-      # --------------------------------------------------------
-      # Install Checkov
-      # --------------------------------------------------------
       - name: Install Checkov
         run: |
           pip install checkov
 
-      - name: Check Checkov version and output options
+      - name: Check Checkov version
         run: |
-          echo "===== Checkov version ====="
           checkov --version
 
-          echo ""
-          echo "===== Checkov output options ====="
-          checkov --help | grep -i "output"    
-
-
-      # --------------------------------------------------------
-      # Run Checkov
-      # --------------------------------------------------------
       - name: Run Checkov
         run: |
           checkov \
             -d terraform \
             --framework terraform \
             -o json \
-            > reports/checkov.json || true
+            --output-file-path reports/checkov.json || true
 
-
-      # --------------------------------------------------------
-      # Verify Checkov report
-      # --------------------------------------------------------
       - name: Verify Checkov report
         run: |
           echo "Checking Checkov report..."
@@ -163,25 +138,24 @@ jobs:
             exit 1
           fi
 
-
-      # --------------------------------------------------------
-      # Show report information
-      # --------------------------------------------------------
-      - name: Show Checkov report
+      - name: Inspect Checkov report
         run: |
-          echo "Checkov report:"
-          head -c 1000 reports/checkov.json || true
+          echo "===== File type ====="
+          file reports/checkov.json
 
+          echo ""
+          echo "===== First 16 bytes ====="
+          xxd -l 16 reports/checkov.json
 
-      # --------------------------------------------------------
-      # Upload Checkov report
-      # --------------------------------------------------------
+          echo ""
+          echo "===== First 500 characters ====="
+          head -c 500 reports/checkov.json || true
+
       - name: Upload IaC report
         uses: actions/upload-artifact@v4
         with:
           name: iac-report
           path: reports/checkov.json
-
   # ============================================================
   # 4. Container Build and Security Scan
   # ============================================================
