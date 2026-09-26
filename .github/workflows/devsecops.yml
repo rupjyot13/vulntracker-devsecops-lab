@@ -124,43 +124,55 @@ jobs:
             -d terraform \
             --framework terraform \
             -o json \
-            --output-file-path reports/checkov.json || true
+            > reports/checkov.json || true
 
-          echo ""
-          echo "===== Reports directory ====="
-          find reports -maxdepth 3 -type f -print
+      - name: Convert Checkov report to UTF-8
+        run: |
+          python - <<'PY'
+          from pathlib import Path
 
-          echo ""
-          echo "===== Reports directory details ====="
-          ls -lah reports
+          path = Path("reports/checkov.json")
+
+          data = path.read_bytes()
+
+          print("Original first bytes:", data[:4])
+
+          if data.startswith(b"\xff\xfe"):
+              print("Detected UTF-16 little-endian.")
+              text = data.decode("utf-16")
+              path.write_text(text, encoding="utf-8")
+              print("Converted Checkov report to UTF-8.")
+
+          elif data.startswith(b"\xfe\xff"):
+              print("Detected UTF-16 big-endian.")
+              text = data.decode("utf-16")
+              path.write_text(text, encoding="utf-8")
+              print("Converted Checkov report to UTF-8.")
+
+          else:
+              print("Report does not have a UTF-16 BOM.")
+              print("Leaving report unchanged.")
+          PY
 
       - name: Verify Checkov report
         run: |
-          echo "Checking Checkov report..."
+          echo "===== Checkov report ====="
 
           if [ -f reports/checkov.json ]; then
             echo "Checkov report created successfully."
             ls -lh reports/checkov.json
           else
             echo "ERROR: Checkov report was not created."
-            echo ""
-            echo "Files actually created:"
-            find reports -maxdepth 3 -type f -print
             exit 1
           fi
 
-      - name: Inspect Checkov report
-        run: |
+          echo ""
           echo "===== File type ====="
           file reports/checkov.json
 
           echo ""
           echo "===== First 16 bytes ====="
           xxd -l 16 reports/checkov.json
-
-          echo ""
-          echo "===== First 500 characters ====="
-          head -c 500 reports/checkov.json || true
 
       - name: Upload IaC report
         uses: actions/upload-artifact@v4
