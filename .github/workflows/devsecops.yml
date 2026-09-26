@@ -120,3 +120,37 @@ jobs:
         with:
           name: iac-report
           path: reports/checkov.json
+
+
+  # ============================================================
+  # 4. Container Build and Security Scan
+  # ============================================================
+  container:
+    name: Container - Build and Trivy Scan
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout source
+        uses: actions/checkout@v6
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t vulntracker:ci \
+            .
+
+      - name: Scan Docker image with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: vulntracker:ci
+          format: json
+          output: trivy-image.json
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+
+      - name: Upload container scan report
+        uses: actions/upload-artifact@v4
+        with:
+          name: container-report
+          path: trivy-image.json
