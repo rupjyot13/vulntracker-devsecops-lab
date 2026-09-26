@@ -126,6 +126,15 @@ jobs:
         run: |
           pip install checkov
 
+      - name: Check Checkov version and output options
+        run: |
+          echo "===== Checkov version ====="
+          checkov --version
+
+          echo ""
+          echo "===== Checkov output options ====="
+          checkov --help | grep -i "output"    
+
 
       # --------------------------------------------------------
       # Run Checkov
