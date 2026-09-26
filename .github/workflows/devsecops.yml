@@ -95,7 +95,7 @@ jobs:
           path: trivy-fs.json
 
 
-  # ============================================================
+    # ============================================================
   # 3. IaC - Infrastructure as Code Security
   # ============================================================
   iac:
@@ -104,23 +104,74 @@ jobs:
 
     steps:
 
+      # --------------------------------------------------------
+      # Checkout source
+      # --------------------------------------------------------
       - name: Checkout source
         uses: actions/checkout@v6
 
-      - name: Run Checkov
-        uses: bridgecrewio/checkov-action@v12.1347.0
-        with:
-          directory: terraform
-          output_format: json
-          output_file_path: reports/checkov.json
-          soft_fail: true
 
+      # --------------------------------------------------------
+      # Create reports directory
+      # --------------------------------------------------------
+      - name: Create reports directory
+        run: |
+          mkdir -p reports
+
+
+      # --------------------------------------------------------
+      # Install Checkov
+      # --------------------------------------------------------
+      - name: Install Checkov
+        run: |
+          pip install checkov
+
+
+      # --------------------------------------------------------
+      # Run Checkov
+      # --------------------------------------------------------
+      - name: Run Checkov
+        run: |
+          checkov \
+            -d terraform \
+            --framework terraform \
+            -o json \
+            > reports/checkov.json || true
+
+
+      # --------------------------------------------------------
+      # Verify Checkov report
+      # --------------------------------------------------------
+      - name: Verify Checkov report
+        run: |
+          echo "Checking Checkov report..."
+
+          if [ -f reports/checkov.json ]; then
+            echo "Checkov report created successfully."
+            ls -lh reports/checkov.json
+          else
+            echo "ERROR: Checkov report was not created."
+            exit 1
+          fi
+
+
+      # --------------------------------------------------------
+      # Show report information
+      # --------------------------------------------------------
+      - name: Show Checkov report
+        run: |
+          echo "Checkov report:"
+          head -c 1000 reports/checkov.json || true
+
+
+      # --------------------------------------------------------
+      # Upload Checkov report
+      # --------------------------------------------------------
       - name: Upload IaC report
         uses: actions/upload-artifact@v4
         with:
           name: iac-report
           path: reports/checkov.json
-
 
   # ============================================================
   # 4. Container Build and Security Scan
